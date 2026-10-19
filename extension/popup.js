@@ -284,4 +284,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   connectPort();
   renderJobs([]);
   if (tab) scanTab();
+  // opened while the page is still loading (or it navigates) → rescan when it has finished
+  chrome.tabs.onUpdated.addListener((id, info) => { if (tab && id === tab.id && info.status === 'complete') { chrome.tabs.get(id).then(t => { tab = t; scanTab(); }); } });
 });

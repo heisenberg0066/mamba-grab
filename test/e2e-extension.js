@@ -145,6 +145,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     try {
       const cp = await ctx.newPage(); await cp.goto('https://commons.wikimedia.org/wiki/File:Roundhay_Garden_Scene.ogv', { waitUntil: 'domcontentloaded' }); await sleep(3000);
       ({ pop } = await popupFor(cp)); it = await itemsOf(pop);
+      if (!it.some(i => i.kind === 'video')) { info('Commons: nothing yet (page still loading?) → Rescan'); await sleep(3000); await pop.evaluate(() => { window.__scanDone = false; }); await pop.click('#rescan'); await pop.waitForFunction(() => window.__scanDone === true, null, { timeout: 60000 }).catch(() => { }); it = await itemsOf(pop); }
       const vids = it.filter(i => i.kind === 'video'); ok('Commons file page: video detected', vids.length > 0, vids.length ? vids.map(v => v.url.split('/').pop()).slice(0, 4).join(', ') : `items=${it.length} url=${cp.url()} kinds=${JSON.stringify(it.map(i => i.kind + ':' + i.source))} frames=${JSON.stringify(await pop.evaluate(() => [window.__frames, window.__scanErrors]))}`);
       await pop.selectOption('#format', 'mp4'); await pop.click('#dlVideo');
       const j = await lastJob(pop, 150000); ok('Commons video downloaded by the app (mp4)', j.status === 'done' && /Roundhay/.test(j.text), JSON.stringify(j));

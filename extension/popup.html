@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head><meta charset="utf-8"><title>Mamba Grab</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">M</div><div><div class="name" data-i18n="appName"></div><div class="tag" data-i18n="tagline"></div></div></div>
+  <div class="right">
+    <span id="appStatus" class="pill" data-i18n="appChecking"></span>
+    <div class="lang"><button data-lang="en">EN</button><button data-lang="ar">عربي</button></div>
+    <button id="gear" class="icon" title="Settings">⚙</button>
+  </div>
+</header>
+
+<section id="drmBanner" class="banner drm hidden">🔒 <span data-i18n="drmBanner"></span></section>
+<section id="siteHint" class="banner hint hidden" data-i18n="ytdlpSite"></section>
+
+<section class="hero">
+  <button id="dlVideo" class="primary big" data-i18n="dlThisVideo"></button>
+  <select id="quality" title="">
+    <option value="best" data-i18n="bestQuality"></option><option value="2160">2160p</option><option value="1440">1440p</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option>
+  </select>
+  <select id="format"><option value="mp4">MP4</option><option value="mkv">MKV</option><option value="webm">WEBM</option><option value="mp3">MP3</option><option value="m4a">M4A</option><option value="opus">OPUS</option><option value="wav">WAV</option><option value="flac">FLAC</option></select>
+  <label class="chk"><input type="checkbox" id="optPlaylist"><span data-i18n="playlist"></span></label>
+  <label class="chk"><input type="checkbox" id="optSubs"><span data-i18n="subs"></span></label>
+  <label class="chk"><input type="checkbox" id="optThumb"><span data-i18n="thumb"></span></label>
+</section>
+<div id="heroMsg" class="msg hidden"></div>
+
+<section class="filters">
+  <div class="tabs" id="kindTabs"></div>
+  <div class="row">
+    <select id="minRes"><option value="0" data-i18n="anyRes"></option><option value="200">≥ 200 px</option><option value="500">≥ 500 px</option><option value="1000">≥ 1000 px</option><option value="1920">≥ 1920 px</option></select>
+    <select id="minSize"><option value="0" data-i18n="anySize"></option><option value="51200">≥ 50 KB</option><option value="512000">≥ 500 KB</option><option value="2097152">≥ 2 MB</option><option value="10485760">≥ 10 MB</option></select>
+    <input id="q" type="search" data-i18n-ph="search">
+    <button id="rescan" class="ghost small" data-i18n="rescan"></button>
+  </div>
+  <div class="row between">
+    <label class="chk"><input type="checkbox" id="selAll"><span data-i18n="selectAll"></span></label>
+    <span id="sizeNote" class="muted small"></span>
+    <div class="row"><button id="dlSel" class="small" disabled></button><button id="dlAll" class="primary small"></button></div>
+  </div>
+</section>
+
+<main id="grid" class="grid"></main>
+<div id="empty" class="empty hidden" data-i18n="nothing"></div>
+
+<section id="queueBox" class="queue">
+  <div class="row between"><b data-i18n="queue"></b><button id="openApp" class="ghost small" data-i18n="openApp"></button></div>
+  <div id="jobs"></div>
+</section>
+
+<section id="settings" class="settings hidden">
+  <h3 data-i18n="settings"></h3>
+  <label class="blk"><span data-i18n="cookies"></span>
+    <select id="cookieMode"><option value="off" data-i18n="cookiesOff"></option><option value="extension" data-i18n="cookiesExt"></option><option value="browser" data-i18n="cookiesBrowser"></option></select>
+  </label>
+  <label class="blk" id="cookieBrowserRow"><span data-i18n="browser"></span>
+    <select id="cookieBrowser"><option value="auto">Auto</option><option value="chrome">Chrome</option><option value="edge">Edge</option><option value="firefox">Firefox</option><option value="brave">Brave</option></select>
+  </label>
+  <p class="muted small" data-i18n="cookiesHelp"></p>
+  <label class="chk"><input type="checkbox" id="autoStartApp"><span data-i18n="autoStart"></span></label>
+  <label class="chk"><input type="checkbox" id="subfolder"><span data-i18n="subfolder"></span></label>
+  <label class="chk"><input type="checkbox" id="hoverButton"><span data-i18n="hover"></span></label>
+  <p class="muted small mono" id="extId"></p>
+</section>
+<script src="lib/media-utils.js"></script>
+<script src="lib/i18n.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

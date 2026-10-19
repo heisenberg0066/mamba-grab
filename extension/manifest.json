@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "description": "__MSG_extDesc__",
+  "version": "1.0.0",
+  "default_locale": "en",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA24xNGNfLfceihCwlJvkOmjR+PZRvtdSOWhcs5II7ZYIQ5Yoy0dUBUdknOSRWQTjEpIn66kwToEni9PVy4SEaKqyP5mpYiuL5JH4vYOzNeGzeZOM0UPBru2Yw+VXuAj1M3+oks3VnRbhZdNmjZvmRLmKq8U4TgMexcXH70gAc5evEgf1dgWs9g1lPIncRcbRdhWaMCuB+EXqLtutHPf0inkbGFaNJF/vvHfKBEidN2z56vFvOxFnIBNExTLYaLgqHoNTrpq9HA8UcbRKAvkrSKLQzrEx2dDv6YLBgAqzVd8ICpxuDlXgSZWM0BjqgWrarP3U5+4mRspY8fGLOEtoKcwIDAQAB",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Mamba Grab",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "webRequest",
+    "downloads",
+    "storage",
+    "scripting",
+    "tabs",
+    "nativeMessaging",
+    "contextMenus",
+    "clipboardWrite"
+  ],
+  "optional_permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/media-utils.js",
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "minimum_chrome_version": "110"
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+dist-ext/
+vendor/
+test/work/
+*.pem
+test/last-results.txt

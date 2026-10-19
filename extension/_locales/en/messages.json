@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Mamba Grab"
+  },
+  "extDesc": {
+    "message": "Find every video, audio file, image and document on a page and download it — streams go to the Mamba Grab app (yt-dlp). No DRM circumvention."
+  }
+}

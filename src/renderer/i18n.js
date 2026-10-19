@@ -1,0 +1,47 @@
+'use strict';
+window.I18N = {
+  en: {
+    appName: 'Mamba Grab', tagline: 'yt-dlp + FFmpeg · runs on this PC',
+    tabGrab: 'Downloads', tabExt: 'Browser extension', tabSettings: 'Settings',
+    saveTo: 'Save to', openFolder: 'Open folder', urlPh: 'Paste a video, playlist or page link…', paste: 'Paste', analyze: 'Analyze', download: 'Download',
+    mode: 'Mode', modeVideo: 'Video', modeAudio: 'Audio only', quality: 'Quality', best: 'Best available', format: 'Format', playlist: 'Whole playlist', items: 'Items',
+    subs: 'Subtitles', thumb: 'Thumbnail', cookies: 'Browser cookies', cookiesOff: 'Off', exactFormat: 'Exact format', autoFormat: 'Automatic (by quality above)',
+    queue: 'Queue', clearFinished: 'Clear finished', queueEmpty: 'Nothing queued yet. Paste a link above or use the Mamba Grab button in Chrome/Edge.',
+    queued: 'Queued', running: 'Downloading', done: 'Done', error: 'Failed', canceled: 'Canceled', drm: 'Copy-protected',
+    drmMsg: 'This video is copy-protected and can\'t be downloaded.',
+    cancel: 'Cancel', retry: 'Retry', remove: 'Remove', show: 'Show file', log: 'Log',
+    analyzing: 'Analyzing with yt-dlp…', noUrl: 'Paste a link first.', added: 'Added to the queue.',
+    duration: 'Duration', by: 'by', entries: 'items in playlist', subsAvail: 'subtitles',
+    extTitle: 'Install the Mamba Grab extension (Chrome / Edge)', extIntro: 'There is no Web Store listing — load the extension folder that came with this app once, in developer mode:',
+    extSteps: ['Click “Open extension folder” below (it is installed with the app).', 'Chrome: open chrome://extensions — Edge: open edge://extensions.', 'Turn on “Developer mode” (top-right in Chrome, left sidebar in Edge).', 'Click “Load unpacked” and choose that folder (the one containing manifest.json).', 'Pin Mamba Grab in the toolbar (puzzle-piece icon → pin). Done — the app is found automatically.'],
+    openExtDir: 'Open extension folder', extIdLabel: 'Extension ID (fixed):', hostTitle: 'Native messaging host', regHost: 'Re-register for Chrome & Edge',
+    extSeenAt: 'Extension last connected: {t}', extNever: 'The extension has not connected yet.',
+    drmTitle: 'Copy-protected (DRM) video', drmText: 'Mamba Grab never bypasses DRM (Widevine, PlayReady, FairPlay). When a page or a site uses it, you get a clear “copy-protected” message instead of a download.',
+    concurrency: 'Parallel downloads', subLangs: 'Subtitle languages (yt-dlp syntax)', embedSubs: 'Embed subtitles in the video', autoSubs: 'Include auto-generated subtitles',
+    embedThumb: 'Embed thumbnail as cover', keepTray: 'Keep running in the tray when the window is closed (so the extension can reach it)', notify: 'Notify when a download finishes', autoUpdate: 'Update yt-dlp automatically (daily, when online)',
+    updateNow: 'Update yt-dlp now', updating: 'Updating…', privacy: 'Everything runs locally. Cookies are only used when you turn them on, only for the site you are downloading from, and the temporary cookie file is deleted after each job.',
+    ready: 'Ready', missing: 'missing'
+  },
+  ar: {
+    appName: 'مامبا جراب', tagline: 'yt-dlp + FFmpeg · يعمل على هذا الجهاز',
+    tabGrab: 'التنزيلات', tabExt: 'إضافة المتصفح', tabSettings: 'الإعدادات',
+    saveTo: 'الحفظ في', openFolder: 'فتح المجلد', urlPh: 'الصق رابط فيديو أو قائمة تشغيل أو صفحة…', paste: 'لصق', analyze: 'تحليل', download: 'تنزيل',
+    mode: 'الوضع', modeVideo: 'فيديو', modeAudio: 'صوت فقط', quality: 'الجودة', best: 'أفضل جودة متاحة', format: 'الصيغة', playlist: 'كامل قائمة التشغيل', items: 'العناصر',
+    subs: 'الترجمات', thumb: 'الصورة المصغّرة', cookies: 'كوكيز المتصفح', cookiesOff: 'إيقاف', exactFormat: 'صيغة محددة', autoFormat: 'تلقائي (حسب الجودة أعلاه)',
+    queue: 'قائمة الانتظار', clearFinished: 'مسح المكتمل', queueEmpty: 'لا شيء في القائمة بعد. الصق رابطًا أعلاه أو استخدم زر مامبا جراب في كروم/إيدج.',
+    queued: 'في الانتظار', running: 'جارٍ التنزيل', done: 'اكتمل', error: 'فشل', canceled: 'أُلغي', drm: 'محمي من النسخ',
+    drmMsg: 'هذا الفيديو محمي من النسخ ولا يمكن تنزيله.',
+    cancel: 'إلغاء', retry: 'إعادة', remove: 'إزالة', show: 'إظهار الملف', log: 'السجل',
+    analyzing: 'جارٍ التحليل عبر yt-dlp…', noUrl: 'الصق رابطًا أولًا.', added: 'أُضيف إلى القائمة.',
+    duration: 'المدة', by: 'بواسطة', entries: 'عنصر في القائمة', subsAvail: 'ترجمات',
+    extTitle: 'تثبيت إضافة مامبا جراب (كروم / إيدج)', extIntro: 'لا يوجد إدراج في المتجر — حمّل مجلد الإضافة المرفق مع التطبيق مرة واحدة في وضع المطوّر:',
+    extSteps: ['اضغط «فتح مجلد الإضافة» بالأسفل (يُثبَّت مع التطبيق).', 'كروم: افتح chrome://extensions — إيدج: افتح edge://extensions.', 'فعّل «وضع المطوّر» (أعلى اليمين في كروم، الشريط الجانبي في إيدج).', 'اضغط «تحميل غير مضغوط» واختر ذلك المجلد (الذي يحتوي manifest.json).', 'ثبّت مامبا جراب في شريط الأدوات. انتهى — سيُعثر على التطبيق تلقائيًا.'],
+    openExtDir: 'فتح مجلد الإضافة', extIdLabel: 'معرّف الإضافة (ثابت):', hostTitle: 'مضيف الرسائل الأصلية', regHost: 'إعادة التسجيل لكروم وإيدج',
+    extSeenAt: 'آخر اتصال للإضافة: {t}', extNever: 'لم تتصل الإضافة بعد.',
+    drmTitle: 'فيديو محمي (DRM)', drmText: 'مامبا جراب لا يتجاوز الحماية أبدًا (Widevine وPlayReady وFairPlay). عند استخدامها تظهر رسالة واضحة «محمي من النسخ» بدل التنزيل.',
+    concurrency: 'تنزيلات متوازية', subLangs: 'لغات الترجمة (صيغة yt-dlp)', embedSubs: 'دمج الترجمة في الفيديو', autoSubs: 'تضمين الترجمات التلقائية',
+    embedThumb: 'دمج الصورة المصغّرة كغلاف', keepTray: 'البقاء في شريط المهام عند إغلاق النافذة (لتصل إليه الإضافة)', notify: 'إشعار عند اكتمال التنزيل', autoUpdate: 'تحديث yt-dlp تلقائيًا (يوميًا عند الاتصال)',
+    updateNow: 'تحديث yt-dlp الآن', updating: 'جارٍ التحديث…', privacy: 'كل شيء يعمل محليًا. الكوكيز تُستخدم فقط عند تفعيلها وللموقع الذي تنزّل منه فقط، ويُحذف ملفها المؤقت بعد كل مهمة.',
+    ready: 'جاهز', missing: 'غير موجود'
+  }
+};

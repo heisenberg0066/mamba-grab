@@ -1,0 +1,100 @@
+{
+  "name": "mamba-grab",
+  "productName": "Mamba Grab",
+  "version": "1.0.0",
+  "description": "Mamba Grab companion app: offline yt-dlp + FFmpeg downloader with a queue, driven by the Mamba Grab browser extension",
+  "author": "Ammar",
+  "license": "MIT",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/run-tests.js",
+    "test:e2e": "node test/e2e-extension.js",
+    "pack:ext": "node build/pack-extension.js",
+    "dist:win": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "jszip": "^3.10.2"
+  },
+  "build": {
+    "appId": "com.ammar.mambagrab",
+    "productName": "Mamba Grab",
+    "copyright": "Free for personal use",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "host/**/*",
+      "build/icon.png",
+      "package.json",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "vendor/bin-win",
+        "to": "bin",
+        "filter": [
+          "ffmpeg.exe",
+          "ffprobe.exe",
+          "yt-dlp.exe",
+          "LICENSE*"
+        ]
+      },
+      {
+        "from": "host",
+        "to": "host",
+        "filter": [
+          "host.js",
+          "pipe-path.js",
+          "mamba-grab-host.bat",
+          "com.ammar.mambagrab.json"
+        ]
+      },
+      {
+        "from": "dist-ext",
+        "to": "extension",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mamba Grab",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "MambaGrab-Setup-${version}-x64.${ext}",
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh"
+    },
+    "artifactName": "MambaGrab-${version}-win-${arch}.${ext}"
+  }
+}

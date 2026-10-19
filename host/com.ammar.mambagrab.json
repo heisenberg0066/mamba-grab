@@ -1,0 +1,7 @@
+{
+  "name": "com.ammar.mambagrab",
+  "description": "Mamba Grab companion app (native messaging host)",
+  "path": "mamba-grab-host.bat",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://phppfdojjnpdbkpoiphpcefadmnkmjfd/"]
+}

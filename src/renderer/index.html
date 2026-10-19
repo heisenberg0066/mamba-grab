@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https: http:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'">
+<title>Mamba Grab</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="logo">M</div><div><div class="name" data-i18n="appName"></div><div class="tag" data-i18n="tagline"></div></div></div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="grab" data-i18n="tabGrab"></button>
+    <button class="tab" data-tab="ext" data-i18n="tabExt"></button>
+    <button class="tab" data-tab="settings" data-i18n="tabSettings"></button>
+  </nav>
+  <div class="right">
+    <label class="out"><span data-i18n="saveTo"></span></label>
+    <button id="outPick" class="ghost small"></button>
+    <button id="outOpen" class="ghost small" data-i18n="openFolder"></button>
+    <div class="lang"><button data-lang="en">EN</button><button data-lang="ar">عربي</button></div>
+  </div>
+</header>
+
+<main>
+  <section id="tab-grab" class="page active">
+    <div class="card urlcard">
+      <div class="row">
+        <input id="url" type="text" spellcheck="false" data-i18n-ph="urlPh">
+        <button id="paste" class="ghost" data-i18n="paste"></button>
+        <button id="analyze" class="ghost" data-i18n="analyze"></button>
+        <button id="addBtn" class="primary" data-i18n="download"></button>
+      </div>
+      <div class="opts row wrap">
+        <label><span data-i18n="mode"></span><select id="mode"><option value="video" data-i18n="modeVideo"></option><option value="audio" data-i18n="modeAudio"></option></select></label>
+        <label id="qualityBox"><span data-i18n="quality"></span><select id="quality"></select></label>
+        <label><span data-i18n="format"></span><select id="format"></select></label>
+        <label class="chk"><input type="checkbox" id="playlist"><span data-i18n="playlist"></span></label>
+        <label id="itemsBox" class="hidden"><span data-i18n="items"></span><input id="items" type="text" placeholder="1-10,15" style="width:110px"></label>
+        <label class="chk"><input type="checkbox" id="subs"><span data-i18n="subs"></span></label>
+        <label class="chk"><input type="checkbox" id="thumb"><span data-i18n="thumb"></span></label>
+        <label><span data-i18n="cookies"></span><select id="cookies"><option value="" data-i18n="cookiesOff"></option><option value="chrome">Chrome</option><option value="edge">Edge</option><option value="firefox">Firefox</option><option value="brave">Brave</option></select></label>
+      </div>
+      <div id="probeMsg" class="msg hidden"></div>
+      <div id="probe" class="probe hidden">
+        <img id="pThumb" alt="">
+        <div class="pinfo">
+          <div id="pTitle" class="ptitle"></div>
+          <div id="pMeta" class="muted"></div>
+          <div class="row wrap"><label><span data-i18n="exactFormat"></span><select id="pFormats"></select></label></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="qhead row between">
+      <h2 data-i18n="queue"></h2>
+      <div class="row"><span id="qStats" class="muted"></span><button id="clearDone" class="ghost small" data-i18n="clearFinished"></button></div>
+    </div>
+    <div id="queue" class="queue"></div>
+    <div id="qEmpty" class="empty muted" data-i18n="queueEmpty"></div>
+  </section>
+
+  <section id="tab-ext" class="page">
+    <div class="card prose">
+      <h2 data-i18n="extTitle"></h2>
+      <p data-i18n="extIntro"></p>
+      <ol id="extSteps"></ol>
+      <div class="row wrap"><button id="openExtDir" class="primary" data-i18n="openExtDir"></button><span class="mono muted" id="extDir"></span></div>
+      <p><b data-i18n="extIdLabel"></b> <span class="mono" id="extId"></span></p>
+      <h3 data-i18n="hostTitle"></h3>
+      <div id="hosts" class="mono small"></div>
+      <div class="row"><button id="regHost" class="ghost small" data-i18n="regHost"></button><span id="extSeen" class="muted small"></span></div>
+      <h3 data-i18n="drmTitle"></h3>
+      <p data-i18n="drmText"></p>
+    </div>
+  </section>
+
+  <section id="tab-settings" class="page">
+    <div class="card grid2">
+      <label><span data-i18n="concurrency"></span><select id="sConc"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+      <label><span data-i18n="subLangs"></span><input id="sSubLangs" type="text"></label>
+      <label class="chk"><input type="checkbox" id="sEmbedSubs"><span data-i18n="embedSubs"></span></label>
+      <label class="chk"><input type="checkbox" id="sAutoSubs"><span data-i18n="autoSubs"></span></label>
+      <label class="chk"><input type="checkbox" id="sEmbedThumb"><span data-i18n="embedThumb"></span></label>
+      <label class="chk"><input type="checkbox" id="sTray"><span data-i18n="keepTray"></span></label>
+      <label class="chk"><input type="checkbox" id="sNotify"><span data-i18n="notify"></span></label>
+      <label class="chk"><input type="checkbox" id="sAutoUpd"><span data-i18n="autoUpdate"></span></label>
+    </div>
+    <div class="card">
+      <div class="row wrap"><b>yt-dlp</b> <span id="vY" class="mono"></span> <b>FFmpeg</b> <span id="vF" class="mono"></span> <button id="updY" class="ghost small" data-i18n="updateNow"></button></div>
+      <pre id="updMsg" class="mono small muted"></pre>
+      <p class="muted small" data-i18n="privacy"></p>
+    </div>
+  </section>
+</main>
+<footer class="status"><span id="stLeft"></span><span id="stRight" class="muted"></span></footer>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

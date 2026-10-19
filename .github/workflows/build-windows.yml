@@ -62,6 +62,18 @@ jobs:
           Get-Content "$env:MAMBA_SMOKE/mamba-selftest.txt"
           if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
 
+      - name: Screenshots of the packaged app UI (EN + AR)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force test/work/shots | Out-Null
+          foreach ($t in @(@('grab','en'), @('ext','en'), @('grab','ar'))) {
+            $env:MAMBA_GRAB_USERDATA = "$env:RUNNER_TEMP\ui-ud"; $env:MAMBA_GRAB_PIPE = '\\.\pipe\mamba-grab-ui-shot'; $env:MAMBA_NO_UPDATE = '1'
+            $env:MAMBA_UI_TAB = $t[0]; $env:MAMBA_UI_LANG = $t[1]; $env:MAMBA_UI_SHOT = "$PWD\test\work\shots\app-win-$($t[0])-$($t[1]).png"
+            $p = Start-Process -FilePath "dist/win-unpacked/Mamba Grab.exe" -PassThru; $p.WaitForExit(60000) | Out-Null
+            if (!(Test-Path $env:MAMBA_UI_SHOT)) { throw "no screenshot $($env:MAMBA_UI_SHOT)" }
+          }
+          Remove-Item Env:MAMBA_GRAB_USERDATA, Env:MAMBA_GRAB_PIPE, Env:MAMBA_UI_TAB, Env:MAMBA_UI_LANG, Env:MAMBA_UI_SHOT
+
       - name: Install silently and verify native-messaging registration (Chrome + Edge)
         shell: pwsh
         run: |

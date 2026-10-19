@@ -80,7 +80,8 @@ function buildArgs(job, ctx = {}) {
   const playlist = !!job.playlist;
   a.push(playlist ? '--yes-playlist' : '--no-playlist');
   if (playlist && job.items) a.push('-I', String(job.items));
-  const tpl = job.template || (playlist
+  const safe = (t) => String(t).replace(/[\\/:*?"<>|\x00-\x1f]+/g, ' ').replace(/%/g, '%%').replace(/\s+/g, ' ').trim().slice(0, 150);
+  const tpl = job.template || (job.forceTitle && !playlist ? safe(job.forceTitle) + ' [%(id)s].%(ext)s' : null) || (playlist
     ? '%(playlist_title,playlist_id|Playlist).100B/%(playlist_index|0)03d - %(title).150B [%(id)s].%(ext)s'
     : '%(title).180B [%(id)s].%(ext)s');
   a.push('-o', tpl);

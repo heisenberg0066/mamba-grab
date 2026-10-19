@@ -22,6 +22,11 @@
   const LAZY_ATTRS = ['data-src', 'data-original', 'data-lazy-src', 'data-lazy', 'data-url', 'data-hi-res-src', 'data-hires', 'data-full', 'data-full-src', 'data-fullsrc', 'data-large', 'data-large-src', 'data-zoom', 'data-zoom-image', 'data-zoom-src', 'data-big', 'data-orig', 'data-orig-file', 'data-original-src', 'data-image', 'data-img', 'data-highres', 'data-actualsrc', 'data-pin-media', 'data-flickity-lazyload'];
   const LAZY_SRCSET = ['data-srcset', 'data-lazy-srcset', 'data-original-set'];
 
+  // wiki-style pages named after a file ("/wiki/File:Clip.ogv", "index.php?title=…") are HTML pages, not files
+  function looksLikePage(h) {
+    try { const pu = new URL(h); let p = pu.pathname; try { p = decodeURIComponent(p); } catch (e) { } return /\/wiki\/|\/index\.php/i.test(pu.pathname) || /[^/]:[^/]/.test(p) || pu.searchParams.has('title'); } catch (e) { return true; }
+  }
+
   function scan() {
     const items = new Map();
     const add = (it) => {
@@ -46,7 +51,7 @@
       for (const a of LAZY_ATTRS) { const v = abs(img.getAttribute(a)); if (v && !/^data:/.test(v)) cands.push({ url: v, w: 0, lazy: true }); }
       // a wrapping link that points at an image file is usually the full-size original
       const link = img.closest('a[href]');
-      if (link) { const h = abs(link.getAttribute('href')); if (h && U.classify(h).kind === 'image') cands.push({ url: h, w: 1e9, link: true }); }
+      if (link) { const h = abs(link.getAttribute('href')); if (h && !looksLikePage(h) && U.classify(h).kind === 'image') cands.push({ url: h, w: 1e9, link: true }); }
       if (!cands.length) continue;
       // pick: linked original > lazy full > largest srcset > current
       const best = cands.find(c => c.link) || cands.filter(c => c.srcset).sort((a, b) => b.w - a.w)[0] || cands.find(c => c.lazy) || cands[0];
@@ -102,8 +107,7 @@
     for (const a of document.querySelectorAll('a[href]')) {
       let h = abs(a.getAttribute('href')); if (!h || !/^https?:/i.test(h)) continue;
       h = h.split('#')[0]; if (h === here) continue;
-      // wiki-style pages named after a file ("/wiki/File:Clip.ogv", "?title=…") are HTML pages, not files
-      try { const pu = new URL(h); if (/\/wiki\/|\/index\.php/i.test(pu.pathname) || /[^/]:[^/]/.test(decodeURIComponent(pu.pathname)) || pu.searchParams.has('title')) continue; } catch (e) { continue; }
+      if (looksLikePage(h)) continue;
       const c = U.classify(h);
       if (c.kind === 'other' || c.kind === 'segment') continue;
       add({ url: h, source: 'link', title: (a.textContent || '').trim().slice(0, 120) || a.title || '', thumb: c.kind === 'image' ? h : null, upgrade: c.kind === 'image' ? U.upgradeCandidates(h) : undefined });

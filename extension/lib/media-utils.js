@@ -100,7 +100,7 @@
     const h = u.hostname, p = u.pathname;
     // Wikimedia / MediaWiki thumbs: /thumb/a/ab/File.jpg/220px-File.jpg → /a/ab/File.jpg
     let m = /^(.*)\/thumb(\/[0-9a-f]\/[0-9a-f]{2}\/[^/]+)\/[^/]+$/.exec(p);
-    if (m) c.push(u.origin + m[1] + m[2]);
+    if (m) c.push((h === 'thumb.wikimedia.org' ? 'https://upload.wikimedia.org' : u.origin) + m[1] + m[2]); // thumbs host → originals host
     // Twitter/X images
     if (/(^|\.)twimg\.com$/.test(h) && /\/media\//.test(p)) {
       const v = new URL(u.href); v.searchParams.set('name', 'orig'); c.push(v.href);

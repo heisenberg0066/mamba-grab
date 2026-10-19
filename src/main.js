@@ -40,7 +40,7 @@ const queue = new Queue({
   stateFile: path.join(USER, 'queue.json'), tempDir: path.join(USER, 'tmp')
 });
 
-let win = null, tray = null, pipe = null, quitting = false, extSeen = 0;
+let win = null, tray = null, pipe = null, quitting = false, extSeen = settings.lastExtSeen || 0;
 const icon = () => nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png'));
 
 function createWindow(show = true) {
@@ -50,6 +50,17 @@ function createWindow(show = true) {
   win.removeMenu();
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   win.once('ready-to-show', () => { if (show) win.show(); });
+  if (process.env.MAMBA_UI_SHOT) { // test hook: screenshot of the main window (optionally a tab) then quit
+    win.webContents.once('did-finish-load', async () => {
+      await new Promise(r => setTimeout(r, 1500));
+      if (process.env.MAMBA_UI_TAB) await win.webContents.executeJavaScript(`document.querySelector('.tab[data-tab="${process.env.MAMBA_UI_TAB}"]').click()`);
+      if (process.env.MAMBA_UI_URL) { await win.webContents.executeJavaScript(`document.querySelector('#url').value=${JSON.stringify(process.env.MAMBA_UI_URL)};document.querySelector('#analyze').click()`); await new Promise(r => setTimeout(r, +process.env.MAMBA_UI_WAIT || 9000)); }
+      if (process.env.MAMBA_UI_LANG) await win.webContents.executeJavaScript(`document.querySelector('.lang button[data-lang="${process.env.MAMBA_UI_LANG}"]').click()`);
+      await new Promise(r => setTimeout(r, 600));
+      fs.writeFileSync(process.env.MAMBA_UI_SHOT, (await win.webContents.capturePage()).toPNG());
+      quitting = true; app.exit(0);
+    });
+  }
   win.on('close', (e) => {
     if (!quitting && settings.keepInTray && tray) { e.preventDefault(); win.hide(); }
   });
@@ -95,13 +106,18 @@ function jobFromExtension(spec) {
   };
 }
 
+function seenExt() {
+  const first = Date.now() - (settings.lastExtSeen || 0) > 60000;
+  extSeen = settings.lastExtSeen = Date.now(); toRenderer('ext', { seen: extSeen });
+  if (first) saveSettings();
+}
 // handlers shared by the pipe (extension) and the renderer
 const H = {
-  ping: async () => { extSeen = Date.now(); toRenderer('ext', { seen: extSeen }); return { ok: true, app: app.getVersion(), ytdlp: versions.ytdlp, ffmpeg: versions.ffmpeg, outDir: settings.outDir }; },
+  ping: async () => { seenExt(); return { ok: true, app: app.getVersion(), ytdlp: versions.ytdlp, ffmpeg: versions.ffmpeg, outDir: settings.outDir }; },
   show: async () => { createWindow(true); return { ok: true }; },
   list: () => queue.list(),
   jobs: async () => ({ ok: true, jobs: queue.list() }),
-  enqueue: async (m) => { extSeen = Date.now(); const j = queue.add(jobFromExtension(m.job || {})); if (j.status === 'drm') return { ok: false, drm: true, job: j, message: j.message }; return { ok: true, job: j }; },
+  enqueue: async (m) => { seenExt(); const j = queue.add(jobFromExtension(m.job || {})); if (j.status === 'drm') return { ok: false, drm: true, job: j, message: j.message }; return { ok: true, job: j }; },
   cancel: async (m) => ({ ok: queue.cancel(m.jobId) }),
   retry: async (m) => ({ ok: queue.retry(m.jobId) }),
   probe: async (m) => { if (!ytdlpBin) return { ok: false, error: 'yt-dlp missing' }; return Y.probe(ytdlpBin, m.url, Object.assign({ playlist: m.playlist, referer: m.referer, cookiesFromBrowser: m.cookiesFromBrowser }, jsCtx())); },

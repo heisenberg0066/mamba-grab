@@ -193,9 +193,12 @@ async function downloadThisVideo(tabId, o) {
   if (sniffed.some(i => i.drm)) return { ok: false, drm: true, message: T('drmBlocked', lang) };
   const streams = sniffed.filter(i => i.stream).sort((a, b) => (b.height || 0) - (a.height || 0));
   const files = sniffed.filter(i => !i.stream && i.kind === 'video').sort((a, b) => (b.size || 0) - (a.size || 0));
-  const fallbackUrls = [o.src, ...streams.map(i => i.url), ...files.map(i => i.url)].filter(Boolean);
-  // 1) companion app (yt-dlp on the page URL; falls back to the sniffed stream/file)
-  const r = await sendToApp({ url: o.url || pageUrl, referer: pageUrl, title: o.title, fallbackUrls, quality: o.quality, format: o.format });
+  const candidates = [...streams.map(i => i.url), ...(isDirectHttp(o.src) ? [o.src] : []), ...files.map(i => i.url)].filter((u, i, a) => u && a.indexOf(u) === i);
+  // 1) companion app. Sites yt-dlp knows (YouTube, Vimeo, Commons…) → page URL (best formats, metadata, playlists).
+  //    Elsewhere → the stream/file the page actually plays (HLS/DASH master first), page URL as the last resort.
+  let url = o.url || pageUrl, fallbackUrls = candidates;
+  if (!o.url && !U.isYtdlpSite(pageUrl) && candidates.length) { url = candidates[0]; fallbackUrls = [...candidates.slice(1), pageUrl]; }
+  const r = await sendToApp({ url, referer: pageUrl, title: o.title, fallbackUrls, quality: o.quality, format: o.format });
   if (r && r.ok) return { ok: true, via: 'app', jobId: r.job && r.job.id, message: T('sentToApp', lang) };
   if (r && r.drm) return { ok: false, drm: true, message: T('drmBlocked', lang) };
   // 2) browser downloads API for a direct file

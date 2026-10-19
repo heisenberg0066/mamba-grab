@@ -12,7 +12,7 @@ async function test(name, fn, { optional } = {}) {
   catch (e) { if (optional) results.push(`SKIP/INFO ${name}: ${e.message.split('\n')[0]}`); else { failed++; results.push(`FAIL ${name}: ${e.stack || e}`); } }
   console.log(results[results.length - 1]);
 }
-const WORK = path.join(__dirname, 'work'); fs.rmSync(WORK, { recursive: true, force: true }); fs.mkdirSync(WORK, { recursive: true });
+const WORK = path.join(__dirname, 'work', 'unit'); fs.rmSync(WORK, { recursive: true, force: true }); fs.mkdirSync(WORK, { recursive: true });
 
 (async () => {
   // ───────── extension helpers ─────────
@@ -37,6 +37,7 @@ const WORK = path.join(__dirname, 'work'); fs.rmSync(WORK, { recursive: true, fo
   await test('original-size upgrades for common sites', () => {
     const up = (u) => U.upgradeCandidates(u)[0];
     assert.strictEqual(up('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Example.jpg/220px-Example.jpg'), 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg');
+    assert.strictEqual(up('https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/1_pano.jpg/250px-1_pano.jpg?utm_source=x'), 'https://upload.wikimedia.org/wikipedia/commons/1/1b/1_pano.jpg');
     assert.strictEqual(up('https://pbs.twimg.com/media/Fabc?format=jpg&name=small'), 'https://pbs.twimg.com/media/Fabc?format=jpg&name=orig');
     assert.strictEqual(up('https://i.pinimg.com/236x/aa/bb/cc/abc.jpg'), 'https://i.pinimg.com/originals/aa/bb/cc/abc.jpg');
     assert.strictEqual(up('https://example.com/wp-content/uploads/2024/01/photo-300x200.jpg'), 'https://example.com/wp-content/uploads/2024/01/photo.jpg');
@@ -125,6 +126,7 @@ const WORK = path.join(__dirname, 'work'); fs.rmSync(WORK, { recursive: true, fo
     a = Y.buildArgs(job({ playlist: true, items: '1-3', subs: true, embedSubs: true, thumb: true, embedThumb: true, cookiesFile: '/tmp/c.txt', referer: 'https://ref/' }));
     for (const x of ['--yes-playlist', '-I', '--write-subs', '--embed-subs', '--write-thumbnail', '--embed-thumbnail', '--cookies', '--referer']) assert.ok(a.includes(x), 'missing ' + x);
     assert.ok(a[a.indexOf('-o') + 1].includes('%(playlist_index'));
+    a = Y.buildArgs(job({ forceTitle: 'My: page 100%' })); assert.strictEqual(a[a.indexOf('-o') + 1], 'My page 100%% [%(id)s].%(ext)s');
     a = Y.buildArgs(job({ cookiesFromBrowser: 'edge' })); assert.strictEqual(a[a.indexOf('--cookies-from-browser') + 1], 'edge');
     for (const q of ['best', '1080', 'audio']) for (const f of ['mp4', 'mkv', 'webm', 'mp3', 'flac']) for (const x of Y.FORBIDDEN_ARGS) assert.ok(!Y.buildArgs(job({ quality: q, format: f })).includes(x));
   });

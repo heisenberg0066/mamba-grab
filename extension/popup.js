@@ -128,6 +128,19 @@ async function enrich() {
   $('#sizeNote').textContent = '';
   render();
   window.__scanDone = true;
+  measureDims();
+}
+
+// real dimensions of upgraded originals (loaded off-screen only when a resolution filter needs them)
+let measuring = false;
+async function measureDims() {
+  if (measuring || !(+S.minRes)) return; measuring = true;
+  const todo = items.filter(i => i.kind === 'image' && i.upgradedFrom && !i.dimsKnown);
+  $('#sizeNote').textContent = todo.length ? t('checkingSizes') : '';
+  let k = 0;
+  const one = (it) => new Promise((res) => { const im = new Image(); const to = setTimeout(() => { im.src = ''; res(); }, 15000); im.onload = () => { clearTimeout(to); it.width = im.naturalWidth; it.height = im.naturalHeight; it.dimsKnown = true; res(); }; im.onerror = () => { clearTimeout(to); res(); }; im.src = it.url; });
+  await Promise.all([0, 1, 2, 3].map(async () => { while (k < todo.length) { await one(todo[k++]); if (k % 6 === 0) render(); } }));
+  $('#sizeNote').textContent = ''; measuring = false; render(); window.__dimsDone = true;
 }
 
 // ───────── render ─────────
@@ -160,11 +173,12 @@ function render() {
     const locked = isLocked(it);
     const c = document.createElement('div'); c.className = 'card' + (selected.has(it.url) ? ' sel' : '') + (locked ? ' locked' : '');
     const th = document.createElement('div'); th.className = 'th';
-    const thumbUrl = it.kind === 'image' ? it.url : it.thumb;
+    // upgraded originals can be huge → the grid shows the page's own small version, the download is the original
+    const thumbUrl = it.kind === 'image' ? (it.upgradedFrom || it.url) : it.thumb;
     if (thumbUrl && /^(https?|data):/.test(thumbUrl)) {
       const img = document.createElement('img'); img.loading = 'lazy'; img.referrerPolicy = 'no-referrer-when-downgrade'; img.src = thumbUrl;
-      img.onload = () => { if (it.kind === 'image' && (!it.width || !it.dimsKnown)) { const chg = it.width !== img.naturalWidth; it.width = img.naturalWidth; it.height = img.naturalHeight; it.dimsKnown = true; if (chg) dims(c, it); } };
-      img.onerror = () => { if (it.upgradedFrom && img.src !== it.upgradedFrom) { it.url = it.upgradedFrom; delete it.upgradedFrom; img.src = it.url; } else { img.remove(); th.textContent = ICON[it.kind] || '📎'; } };
+      img.onload = () => { if (it.kind === 'image' && !it.upgradedFrom && (!it.width || !it.dimsKnown)) { const chg = it.width !== img.naturalWidth; it.width = img.naturalWidth; it.height = img.naturalHeight; it.dimsKnown = true; if (chg) dims(c, it); } };
+      img.onerror = () => { img.remove(); th.textContent = ICON[it.kind] || '📎'; };
       th.appendChild(img);
     } else th.textContent = ICON[it.kind] || '📎';
     th.title = it.url; th.onclick = () => toggle(it, c);
@@ -251,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#quality').onchange = () => save({ quality: $('#quality').value });
   $('#format').onchange = () => save({ format: $('#format').value });
   for (const k of ['optPlaylist', 'optSubs', 'optThumb']) $('#' + k).onchange = () => save({ [k.slice(3).toLowerCase()]: $('#' + k).checked });
-  $('#minRes').onchange = () => { save({ minRes: $('#minRes').value }); render(); };
+  $('#minRes').onchange = () => { save({ minRes: $('#minRes').value }); render(); measureDims(); };
   $('#minSize').onchange = () => { save({ minSize: $('#minSize').value }); render(); };
   $('#q').oninput = () => render();
   $('#rescan').onclick = () => scanTab();

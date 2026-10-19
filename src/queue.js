@@ -42,6 +42,8 @@ class Queue extends EventEmitter {
       title: spec.title || spec.url, outDir: spec.outDir || this.opts.outDir(), quality: spec.quality || 'best', format: spec.format || 'mp4'
     }, spec);
     j.title = j.title || j.url;
+    // a sniffed stream/file (not the page itself): yt-dlp would call it "master"/"index" → keep the page title
+    if (spec.title && spec.referer && spec.url !== spec.referer && /\.(m3u8|mpd|mp4|webm|m4v|mov|mp3|m4a|ogg|ogv)(\?|$)/i.test(spec.url)) { j.forceTitle = spec.title; j.titleFixed = true; }
     // cookies from the extension: written to a private temp file for this job only, deleted afterwards
     if (spec.cookiesTxt) {
       const f = path.join(this.opts.tempDir, 'cookies-' + j.id + '.txt');
@@ -108,7 +110,7 @@ class Queue extends EventEmitter {
         // page URL not supported by yt-dlp → try the stream/file the extension sniffed on that page
         const fb = (j.fallbackUrls || []).filter(u => /^https?:/i.test(u));
         j.fallbackIndex = j.fallbackIndex || 0;
-        if (fb.length > j.fallbackIndex && (Y.isUnsupportedMessage(lastErr) || /HTTP Error 4\d\d|Unable to download webpage/i.test(lastErr))) {
+        if (fb.length > j.fallbackIndex && (Y.isUnsupportedMessage(lastErr) || /HTTP Error 4\d\d|Unable to download|Unable to open|Invalid data found|No such file|ffmpeg exited/i.test(lastErr))) {
           const next = fb[j.fallbackIndex++]; j.log.push('Falling back to ' + next);
           this.changed(j); return this.start(j, next);
         }

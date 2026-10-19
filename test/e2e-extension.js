@@ -52,6 +52,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   ok('extension loads with the fixed ID', extId === EXT_ID, extId);
   // downloads go to a known folder
   await sw.evaluate(() => chrome.storage.local.set({ subfolder: true, lang: 'en' }));
+  // the app is started by the native host on demand (as the extension does with "start the app automatically")
+  const boot = await sw.evaluate(() => new Promise(r => chrome.runtime.sendNativeMessage('com.ammar.mambagrab', { cmd: 'ping', launch: true }, (x) => r(x || { error: chrome.runtime.lastError && chrome.runtime.lastError.message }))));
+  ok('native host auto-starts the app', boot && boot.ok === true, JSON.stringify(boot));
 
   async function popupFor(page) {
     const tabId = await sw.evaluate(async (u) => (await chrome.tabs.query({})).find(t => t.url === u).id, page.url());
@@ -151,8 +154,8 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       const gp = await ctx.newPage(); await gp.goto('https://commons.wikimedia.org/wiki/Category:Featured_pictures_of_landscapes', { waitUntil: 'domcontentloaded' }); await sleep(3000);
       ({ pop } = await popupFor(gp)); it = await itemsOf(pop);
       const imgs = it.filter(i => i.kind === 'image'); const up = imgs.filter(i => i.upgradedFrom);
-      ok('Commons gallery: thumbnails upgraded to originals', up.length >= 5, `${imgs.length} images, ${up.length} upgraded, e.g. ${up[0] && up[0].url}`);
-      await pop.selectOption('#minRes', '1920'); await sleep(1500); const nBig = await pop.$$eval('.card', c => c.length); info(`gallery: ${nBig} images ≥ 1920px after loading`);
+      ok('Commons gallery: thumbnails upgraded to originals', up.length >= 20 && !imgs.some(i => /\/wiki\/File:/.test(i.url)), `${imgs.length} images, ${up.length} upgraded, e.g. ${up[0] && up[0].url}`);
+      await pop.selectOption('#minRes', '1920'); await pop.waitForFunction(() => window.__dimsDone === true, null, { timeout: 120000 }).catch(() => { }); const nBig = await pop.$$eval('.card', c => c.length); info(`gallery: ${nBig} images ≥ 1920px after loading`);
       await pop.screenshot({ path: path.join(SHOTS, 'popup-commons-gallery.png'), fullPage: true }); await pop.selectOption('#minRes', '0'); await pop.close(); await gp.close();
     } catch (e) { ok('Commons gallery page', false, e.message); }
     try {

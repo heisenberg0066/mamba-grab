@@ -1,0 +1,127 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch FFmpeg (gyan.dev essentials) and yt-dlp.exe (latest release)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force vendor/bin-win | Out-Null
+          Invoke-WebRequest https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg-tmp
+          $bin = Get-ChildItem ffmpeg-tmp -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          Copy-Item $bin.FullName, (Join-Path $bin.DirectoryName 'ffprobe.exe') vendor/bin-win/
+          Copy-Item (Get-ChildItem ffmpeg-tmp -Recurse -Filter LICENSE | Select-Object -First 1).FullName vendor/bin-win/LICENSE.ffmpeg.txt
+          Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile vendor/bin-win/yt-dlp.exe
+          Invoke-WebRequest https://raw.githubusercontent.com/yt-dlp/yt-dlp/master/LICENSE -OutFile vendor/bin-win/LICENSE.yt-dlp.txt
+          vendor/bin-win/ffmpeg.exe -hide_banner -version | Select-Object -First 1
+          vendor/bin-win/yt-dlp.exe --version
+
+      - name: Tests on Windows (unit + queue + native host + real yt-dlp/FFmpeg downloads)
+        shell: pwsh
+        run: |
+          $env:YTDLP_PATH = "$PWD\vendor\bin-win\yt-dlp.exe"; $env:FFMPEG_PATH = "$PWD\vendor\bin-win\ffmpeg.exe"
+          $env:MAMBA_JS_RUNTIME = (Get-Command node).Source
+          node test/run-tests.js
+
+      - name: Package extension (zip + bundled copy)
+        run: node build/pack-extension.js
+
+      - name: Build NSIS installer and zip
+        run: npx electron-builder --win --x64 --publish never
+
+      - name: Smoke-test the packaged app (bundled yt-dlp/FFmpeg, pipe, resources)
+        shell: pwsh
+        env:
+          MAMBA_SMOKE: ${{ runner.temp }}\mamba-smoke
+        run: |
+          $p = Start-Process -FilePath "dist/win-unpacked/Mamba Grab.exe" -ArgumentList '--selftest' -PassThru -Wait -NoNewWindow
+          Get-Content "$env:MAMBA_SMOKE/mamba-selftest.txt"
+          if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
+
+      - name: Install silently and verify native-messaging registration (Chrome + Edge)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\MambaGrab-Setup-*.exe | Select-Object -First 1
+          $dir = "$env:LOCALAPPDATA\Programs\Mamba Grab"; $exe = "$dir\Mamba Grab.exe"
+          for ($try = 1; $try -le 3 -and !(Test-Path $exe); $try++) {
+            $p = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+            Write-Host "Setup exit code: $($p.ExitCode) (attempt $try)"
+            for ($i = 0; $i -lt 60 -and !(Test-Path $exe); $i++) { Start-Sleep 1 }
+          }
+          if (!(Test-Path $exe)) { throw "not installed at $exe" }
+          foreach ($k in 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.ammar.mambagrab', 'HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\com.ammar.mambagrab') {
+            $v = (Get-ItemProperty $k).'(default)'; Write-Host "$k = $v"
+            if ($v -ne "$dir\resources\host\com.ammar.mambagrab.json" -or !(Test-Path $v)) { throw "host not registered: $k" }
+          }
+          Get-Content "$dir\resources\host\com.ammar.mambagrab.json"
+          foreach ($f in 'resources\host\host.js', 'resources\host\mamba-grab-host.bat', 'resources\extension\manifest.json', 'resources\bin\yt-dlp.exe', 'resources\bin\ffmpeg.exe') { if (!(Test-Path "$dir\$f")) { throw "missing $f" } }
+
+      - name: End-to-end through the registered host (as Chrome starts it) → auto-launched app → yt-dlp download
+        shell: pwsh
+        run: |
+          $env:E2E_OUT = "$PWD\host-e2e.txt"
+          node test/host-e2e.js
+          $code = $LASTEXITCODE
+          Get-ChildItem "$env:USERPROFILE\Downloads\Mamba Grab" -ErrorAction SilentlyContinue | Format-Table Name, Length
+          Get-Process 'Mamba Grab' -ErrorAction SilentlyContinue | Stop-Process -Force
+          if ($code -ne 0) { throw "host e2e failed" }
+
+      - name: Browser test – load the unpacked extension in Chromium (local fixture pages, informational)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          npm i --no-save playwright@1
+          npx playwright install chromium
+          $mf = "$env:LOCALAPPDATA\Programs\Mamba Grab\resources\host\com.ammar.mambagrab.json"
+          foreach ($k in 'HKCU:\Software\Chromium\NativeMessagingHosts\com.ammar.mambagrab', 'HKCU:\Software\Google\Chrome for Testing\NativeMessagingHosts\com.ammar.mambagrab') { New-Item -Force $k | Out-Null; Set-ItemProperty $k '(default)' $mf }
+          $env:PATH = "$PWD\vendor\bin-win;$env:PATH"; $env:MAMBA_OFFLINE = '1'
+          node test/e2e-extension.js
+          Get-Process 'Mamba Grab' -ErrorAction SilentlyContinue | Stop-Process -Force
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mamba-grab-windows
+          path: |
+            dist/*.exe
+            dist/*.zip
+            test/last-results.txt
+            test/work/e2e-results.txt
+            test/work/shots/*.png
+            host-e2e.txt
+          if-no-files-found: warn
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mamba Grab ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            dist/MambaGrab-Setup-*-x64.exe
+            dist/MambaGrab-*-win-x64.zip
+            dist/MambaGrab-Extension-*.zip

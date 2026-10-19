@@ -196,7 +196,7 @@ async function downloadThisVideo(tabId, o) {
   const fallbackUrls = [o.src, ...streams.map(i => i.url), ...files.map(i => i.url)].filter(Boolean);
   // 1) companion app (yt-dlp on the page URL; falls back to the sniffed stream/file)
   const r = await sendToApp({ url: o.url || pageUrl, referer: pageUrl, title: o.title, fallbackUrls, quality: o.quality, format: o.format });
-  if (r && r.ok) return { ok: true, via: 'app', message: T('sentToApp', lang) };
+  if (r && r.ok) return { ok: true, via: 'app', jobId: r.job && r.job.id, message: T('sentToApp', lang) };
   if (r && r.drm) return { ok: false, drm: true, message: T('drmBlocked', lang) };
   // 2) browser downloads API for a direct file
   const direct = isDirectHttp(o.src) ? o.src : (files[0] && files[0].url);

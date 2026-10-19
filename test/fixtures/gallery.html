@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Mamba Grab test gallery</title>
+<meta property="og:image" content="og.png"></head>
+<body style="font-family:sans-serif">
+<h1>Test gallery</h1>
+<img id="srcset" src="small.png" srcset="small.png 200w, big.png 1600w" sizes="200px" width="200" alt="srcset image">
+<img id="lazy" src="placeholder.png" data-src="lazy_full.png" width="120" alt="lazy image">
+<a href="full.png"><img id="linked" src="thumb.png" width="100" alt="linked thumb"></a>
+<div id="bg" style="width:300px;height:200px;background-image:url('bg.png');background-size:cover"></div>
+<p><a href="doc.pdf">A PDF document</a> · <a href="data.zip">An archive</a> · <a href="notes.txt">notes</a></p>
+<video id="v" src="clip.mp4" poster="poster.png" width="480" height="270" controls muted></video>
+<audio src="tone.mp3" controls></audio>
+<script src="sniff.js"></script>
+</body></html>

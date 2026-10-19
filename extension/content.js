@@ -98,8 +98,12 @@
     }
 
     // links to files
+    const here = location.href.split('#')[0];
     for (const a of document.querySelectorAll('a[href]')) {
-      const h = abs(a.getAttribute('href')); if (!h || !/^https?:/i.test(h)) continue;
+      let h = abs(a.getAttribute('href')); if (!h || !/^https?:/i.test(h)) continue;
+      h = h.split('#')[0]; if (h === here) continue;
+      // wiki-style pages named after a file ("/wiki/File:Clip.ogv", "?title=…") are HTML pages, not files
+      try { const pu = new URL(h); if (/\/wiki\/|\/index\.php/i.test(pu.pathname) || /[^/]:[^/]/.test(decodeURIComponent(pu.pathname)) || pu.searchParams.has('title')) continue; } catch (e) { continue; }
       const c = U.classify(h);
       if (c.kind === 'other' || c.kind === 'segment') continue;
       add({ url: h, source: 'link', title: (a.textContent || '').trim().slice(0, 120) || a.title || '', thumb: c.kind === 'image' ? h : null, upgrade: c.kind === 'image' ? U.upgradeCandidates(h) : undefined });
@@ -123,8 +127,8 @@
   window.__mambaScan = scan;
 
   // ── one-click hover button on videos ──
-  let host = null, btn = null, current = null, hideT = 0, enabled = true;
-  try { chrome.storage.local.get({ hoverButton: true, lang: '' }, (s) => { enabled = s.hoverButton !== false; host && (btn.textContent = label(s.lang)); }); } catch (e) { }
+  let host = null, btn = null, current = null, hideT = 0, enabled = true, langPref = '';
+  try { chrome.storage.local.get({ hoverButton: true, lang: '' }, (s) => { enabled = s.hoverButton !== false; langPref = s.lang; if (btn) btn.textContent = label(langPref); }); } catch (e) { }
   const label = (lang) => ((lang || (navigator.language || '').slice(0, 2)) === 'ar' ? '⬇ تنزيل هذا الفيديو' : '⬇ Download this video');
   function ensureBtn() {
     if (host) return;
@@ -133,7 +137,7 @@
     const sh = host.attachShadow({ mode: 'closed' });
     sh.innerHTML = '<style>button{all:initial;font:600 12px "Segoe UI",system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#ff7a00,#ff9a3d);padding:6px 11px;border-radius:8px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35)}button:hover{filter:brightness(1.08)}.msg{display:block;max-width:260px;margin-top:6px;font:12px "Segoe UI",system-ui,sans-serif;color:#fff;background:#1f2937;padding:7px 9px;border-radius:8px}</style><button></button><span class="msg" hidden></span>';
     btn = sh.querySelector('button'); const msg = sh.querySelector('.msg');
-    btn.textContent = label();
+    btn.textContent = label(langPref);
     btn.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation();
       const v = current; if (!v) return;

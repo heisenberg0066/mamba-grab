@@ -50,8 +50,8 @@ function setAppPill(st) {
 function renderJobs(jobs) {
   const box = $('#jobs'); box.innerHTML = '';
   if (!jobs.length) { box.innerHTML = `<div class="muted small">${t('noJobs')}</div>`; return; }
-  for (const j of jobs.slice(0, 6)) {
-    const d = document.createElement('div'); d.className = 'job ' + j.status;
+  for (const j of jobs.slice(0, 5)) {
+    const d = document.createElement('div'); d.className = 'job ' + j.status; d.dataset.id = j.id; d.dataset.status = j.status;
     const st = j.status === 'drm' ? t('drmBlocked') : j.status === 'running' ? `${Math.round(j.progress || 0)}% ${j.speed || ''} ${j.eta ? '· ' + j.eta : ''}` : t(j.status === 'error' ? 'error' : j.status);
     d.innerHTML = `<div class="t"></div><div class="s"></div><div class="bar"><i style="width:${Math.max(0, Math.min(100, j.status === 'done' ? 100 : j.progress || 0))}%"></i></div>`;
     d.querySelector('.t').textContent = j.title || j.url; d.querySelector('.s').textContent = st + (j.status === 'error' && j.message ? ' — ' + j.message.slice(0, 80) : '');
@@ -61,14 +61,22 @@ function renderJobs(jobs) {
 
 // ───────── scanning ─────────
 async function scanTab() {
+  window.__scanDone = false;
   let frames = [];
-  try {
-    frames = await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, func: () => (window.__mambaScan ? window.__mambaScan() : null) });
-    if (!frames.some(f => f.result)) {
-      await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['lib/media-utils.js', 'content.js'] });
-      frames = await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, func: () => (window.__mambaScan ? window.__mambaScan() : null) });
+  const run = async (allFrames) => {
+    const target = { tabId: tab.id, allFrames };
+    const scanFn = () => { try { return window.__mambaScan ? window.__mambaScan() : null; } catch (e) { return { error: String(e && e.stack || e), items: [] }; } };
+    let f = await chrome.scripting.executeScript({ target, func: scanFn });
+    if (!f.length || f.some(x => !x.result)) { // a frame without the content script (opened before install, prerender…) → inject, rescan
+      await chrome.scripting.executeScript({ target, files: ['lib/media-utils.js', 'content.js'] });
+      f = await chrome.scripting.executeScript({ target, func: scanFn });
     }
-  } catch (e) { /* chrome:// pages etc. */ }
+    window.__scanErrors = f.filter(x => x.result && x.result.error).map(x => x.result.error);
+    window.__frames = f.map(x => ({ frameId: x.frameId, n: x.result && x.result.items ? x.result.items.length : null, url: x.result && x.result.frameUrl }));
+    return f;
+  };
+  // all frames first (embedded players); if one frame is inaccessible the whole call fails → main frame only
+  try { frames = await run(true); } catch (e) { try { frames = await run(false); } catch (e2) { /* chrome:// pages etc. */ } }
   const bg = await send({ type: 'get-tab', tabId: tab.id }) || {};
   drm = bg.drm || { detected: false }; ytdlpOnly = !!bg.ytdlpOnly;
   const map = new Map();
@@ -77,8 +85,10 @@ async function scanTab() {
     if (r.drm) drm = { detected: true, how: r.drmHow };
     for (const it of r.items) if (!map.has(it.url)) map.set(it.url, it);
   }
+  const alternates = new Set(); for (const it of map.values()) for (const a of it.alternates || []) alternates.add(a);
   for (const it of bg.items || []) {
     if (it.child) continue;
+    if (it.kind === 'image' && alternates.has(it.url)) continue; // a smaller srcset/thumb variant of an image we already list
     const prev = map.get(it.url);
     map.set(it.url, Object.assign({}, prev || {}, it, prev ? { title: prev.title || it.title, thumb: prev.thumb } : {}));
   }
@@ -95,7 +105,8 @@ async function scanTab() {
 // upgrade thumbnails to originals + fetch sizes (HEAD), bounded concurrency
 async function head(url) {
   try {
-    const r = await fetch(url, { method: 'HEAD', credentials: 'include', cache: 'force-cache' });
+    const ac = new AbortController(); const to = setTimeout(() => ac.abort(), 6000);
+    const r = await fetch(url, { method: 'HEAD', credentials: 'include', cache: 'force-cache', signal: ac.signal }); clearTimeout(to);
     if (!r.ok) return null;
     return { type: r.headers.get('content-type') || '', size: +r.headers.get('content-length') || 0 };
   } catch (e) { return null; }
@@ -116,6 +127,7 @@ async function enrich() {
   items = [...seen.values()];
   $('#sizeNote').textContent = '';
   render();
+  window.__scanDone = true;
 }
 
 // ───────── render ─────────
@@ -218,13 +230,15 @@ async function downloadThisVideo() {
   const r = await send(Object.assign({ type: 'download-this-video', tabId: tab.id, pageUrl, topUrl: pageUrl, src, title: tab.title }, o));
   $('#dlVideo').disabled = false;
   msg(r ? r.message : t('needAppRunning'), r && r.drm ? 'drm' : r && r.ok ? 'ok' : 'err');
+  if (r && r.jobId) window.__lastJob = r.jobId;
   if (r && r.ok && r.via === 'app') { if (!port) connectPort(); else rpc({ cmd: 'subscribe' }); }
 }
 
 // ───────── init ─────────
 document.addEventListener('DOMContentLoaded', async () => {
   S = Object.assign({}, DEFAULTS, await chrome.storage.local.get(DEFAULTS)); kind = S.kind || 'all';
-  [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const qt = new URLSearchParams(location.search).get('tab'); // ?tab=<id> lets the popup run in a normal tab (tests / pop-out)
+  if (qt) tab = await chrome.tabs.get(+qt); else [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   $('#quality').value = S.quality; $('#format').value = S.format; $('#optPlaylist').checked = S.playlist; $('#optSubs').checked = S.subs; $('#optThumb').checked = S.thumb;
   $('#minRes').value = S.minRes; $('#minSize').value = S.minSize;
   for (const k of ['cookieMode', 'cookieBrowser']) $('#' + k).value = S[k];

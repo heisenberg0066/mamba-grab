@@ -98,8 +98,9 @@ function buildArgs(job, ctx = {}) {
     const h = /^\d+$/.test(q) ? +q : 0;
     const f = h ? `bv*[height<=${h}]+ba/b[height<=${h}]/bv*+ba/b` : 'bv*+ba/b';
     a.push('-f', f);
-    if (fmt === 'mp4') a.push('-S', 'res,fps,vcodec:h264,acodec:m4a', '--merge-output-format', 'mp4');
-    else if (fmt === 'webm') a.push('-S', 'res,fps,vcodec:vp9,acodec:opus', '--merge-output-format', 'webm');
+    // the container the user chose is guaranteed: merges go straight into it, anything else is converted by FFmpeg
+    if (fmt === 'mp4') a.push('-S', 'res,fps,vcodec:h264,acodec:m4a', '--merge-output-format', 'mp4', '--recode-video', 'mp4');
+    else if (fmt === 'webm') a.push('-S', 'res,fps,vcodec:vp9,acodec:opus', '--merge-output-format', 'webm', '--recode-video', 'webm');
     else a.push('--merge-output-format', 'mkv');
   }
   if (job.subs) {

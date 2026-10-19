@@ -222,7 +222,7 @@ const WORK = path.join(__dirname, 'work'); fs.rmSync(WORK, { recursive: true, fo
     await test('real: download Commons video as MP4 (best ≤ 480p) with thumbnail', async () => {
       const r = await runQueue({ url: COMMONS, quality: '480', format: 'mp4', thumb: true });
       assert.strictEqual(r.status, 'done', r.message + '\n' + (r.log || []).slice(-5).join('\n'));
-      const f = r.files.find(x => /\.(mp4|webm|ogv|mkv)$/.test(x)); assert.ok(f && fs.statSync(f).size > 50000, 'video file ' + r.files.join(','));
+      const f = r.files.find(x => /\.mp4$/.test(x)); assert.ok(f && fs.statSync(f).size > 50000, 'mp4 file ' + r.files.join(','));
     });
     if (ffmpeg) await test('real: extract audio to MP3 from a direct Commons file', async () => {
       const r = await runQueue({ url: 'https://upload.wikimedia.org/wikipedia/commons/d/da/Small_tortoises_mating.webm', format: 'mp3', quality: 'audio' });

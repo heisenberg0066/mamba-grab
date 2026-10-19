@@ -8,6 +8,10 @@
 |---|---|---|
 | ![popup](docs/popup.png) | ![drm](docs/popup-drm.png) | ![ar](docs/popup-ar.png) |
 
+Companion app (screenshot from the Windows CI build):
+
+![app](docs/app-win-grab-en.png)
+
 ## Download
 
 From the [latest release](https://github.com/heisenberg0066/mamba-grab/releases/latest):

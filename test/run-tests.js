@@ -216,7 +216,9 @@ const WORK = path.join(__dirname, 'work', 'unit'); fs.rmSync(WORK, { recursive: 
   const ffmpeg = Y.findTool('ffmpeg', Y.binDirs(null, null), 'FFMPEG_PATH');
   if (ytdlp) {
     console.log('yt-dlp:', ytdlp, await Y.version(ytdlp), ' ffmpeg:', ffmpeg);
-    const runQueue = (spec, ms = 240000) => { const d = path.join(WORK, 'real'); const q = new Queue({ ytdlp: () => ytdlp, ffmpegDir: () => ffmpeg ? path.dirname(ffmpeg) : null, js: () => (process.env.MAMBA_JS_RUNTIME ? { jsRuntime: process.env.MAMBA_JS_RUNTIME, jsRuntimeIsElectron: !!process.env.MAMBA_JS_ELECTRON } : {}), outDir: () => d, concurrency: () => 2, lang: () => 'en', stateFile: path.join(d, 'q.json'), tempDir: path.join(d, 'tmp') }); return waitDone(q, q.add(spec).id, ms); };
+    const runQueue = (spec, ms = 240000) => { const d = path.join(WORK, 'real'); const q = new Queue({ ytdlp: () => ytdlp, ffmpegDir: () => ffmpeg ? path.dirname(ffmpeg) : null, js: () => (process.env.MAMBA_JS_RUNTIME ? { jsRuntime: process.env.MAMBA_JS_RUNTIME, jsRuntimeIsElectron: !!process.env.MAMBA_JS_ELECTRON } : {}), outDir: () => d, concurrency: () => 2, lang: () => 'en', stateFile: path.join(d, 'q.json'), tempDir: path.join(d, 'tmp') }); const once = () => waitDone(q, q.add(Object.assign({}, spec)).id, ms);
+      // public servers occasionally rate-limit CI runners (429 / "Unable to download") → one retry after a pause
+      return once().then(async (r) => (r.status === 'error' && /Unable to download|HTTP Error (429|5\d\d)|timed out|Connection/i.test(r.message || '')) ? (await new Promise(x => setTimeout(x, 8000)), once()) : r); };
     const COMMONS = 'https://commons.wikimedia.org/wiki/File:Roundhay_Garden_Scene.ogv';
     await test('real: probe a Wikimedia Commons video page', async () => {
       const r = await Y.probe(ytdlp, COMMONS); assert.ok(r.ok, r.error); assert.ok(/Roundhay/.test(r.info.title)); assert.ok(r.info.formats.length >= 1); assert.ok(!r.info.drm);
